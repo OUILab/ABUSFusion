@@ -1,0 +1,23 @@
+# Data
+train_h5_file: 'path/to/your/train.h5'
+val_h5_file: 'path/to/your/val.h5'
+inference_h5_file: 'path/to/your/inference.h5'
+image_root_dir: 'C:\Users\Robert Bing\Desktop\Matched_IMU_OT_frames'
+num_input_frames: 5
+image_size: 224
+
+# Model
+model_save_path: 'experiments/checkpoints/dclnet_model.pth'
+
+# Training
+batch_size: 32
+num_epochs: 300
+learning_rate: 5e-5
+lr_step_size: 5
+lr_gamma: 0.9
+lambda_corr: 0.5
+num_workers: 4
+log_interval: 10
+
+# Hardware
+device: 'cuda'

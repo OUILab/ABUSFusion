@@ -1,0 +1,30 @@
+graph TD
+    A[Input: 2D Ultrasound Images] --> C[Image Encoding]
+    B[Input: Probe Poses] --> D[Pose Embedding]
+    C --> E[Temporal-Spatial Integration]
+    D --> E
+    E --> F[3D Volume Reconstruction]
+    F --> G[Output: Reconstructed 3D Volume]
+
+    H[Ground Truth 3D Volume] --> I[Loss Calculation]
+    G --> I
+    I --> J[Backpropagation]
+    J --> K[Update Neural Operator Parameters]
+
+    subgraph "Neural Operator Architecture"
+        C
+        D
+        E
+        F
+    end
+
+    subgraph "Training Process"
+        I
+        J
+        K
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#f9f,stroke:#333,stroke-width:2px
+    style G fill:#9ff,stroke:#333,stroke-width:2px
+    style H fill:#ff9,stroke:#333,stroke-width:2px
