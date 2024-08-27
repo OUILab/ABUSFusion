@@ -4,17 +4,17 @@
 # %% [markdown]
 # ## 1. Import Libraries
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 # %%
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.model_selection import train_test_split
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from tqdm import tqdm
 
 # %% [markdown]

@@ -1,9 +1,9 @@
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import numpy as np
 from sklearn.model_selection import train_test_split
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from tqdm import tqdm
 
 

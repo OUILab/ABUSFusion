@@ -5,24 +5,21 @@
 
 # %%
 import os
-import torch
-import pandas as pd
-import numpy as np
-import h5py
-from torch.utils.data import Dataset, DataLoader
-from torchvision.models import efficientnet_b1
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+from freehand.loss import PointDistance
 # Import custom modules
 from freehand.network import build_model
-from freehand.transform import (
-    LabelTransform,
-    PredictionTransform,
-    TransformAccumulation,
-)
+from freehand.transform import (LabelTransform, PredictionTransform,
+                                TransformAccumulation)
 from freehand.utils import pair_samples, reference_image_points, type_dim
-from freehand.loss import PointDistance
+from mpl_toolkits.mplot3d import Axes3D
+from torch.utils.data import DataLoader, Dataset
+from torchvision.models import efficientnet_b1
 
 # %% [markdown]
 # ## Load and Preprocess Data

@@ -20,7 +20,6 @@ class DCLNet(nn.Module):
             kernel_size=(1, 3, 3), stride=(1, 2, 2), padding=(0, 1, 1)
         )
 
-        # Simplified ResNext blocks (you may want to expand this)
         self.layer1 = self._make_layer(64, 128, 3)
         self.layer2 = self._make_layer(128, 256, 4)
         self.layer3 = self._make_layer(256, 512, 6)

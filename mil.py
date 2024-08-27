@@ -54,12 +54,11 @@ by TensorFlow.
 ## Setup
 """
 
-import numpy as np
 import keras
-from keras import layers
-from keras import ops
-from tqdm import tqdm
+import numpy as np
+from keras import layers, ops
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 plt.style.use("ggplot")
 

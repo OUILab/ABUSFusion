@@ -1,98 +1,127 @@
+import argparse
+
+import pandas as pd
 import torch
+import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from models.dclnet.dclnet import DCLNet
-from data.us_dataset import USDataset
-from utils.losses.mse_correlation_loss import MSECorrelationLoss
 import yaml
-import os
+from sklearn.model_selection import train_test_split
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+from data.us_dataset import QuaternionToEulerTransform, SequentialDataset
+from models.gru.grunet import GruNet
+from utils.losses.mse_correlation_loss import MSECorrelationLoss
+
+
+def load_config(config_path):
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
 
 
 def train(config):
-    # Set device
     device = torch.device(config["device"])
 
-    # Data loading
-    transform = transforms.Compose(
-        [
-            transforms.Resize((config["image_size"], config["image_size"])),
-            transforms.ToTensor(),
-        ]
+    # Load data
+    df = pd.read_hdf(config["data_file"])
+
+    # Create dataset
+    transform = QuaternionToEulerTransform()
+    dataset = SequentialDataset(
+        df,
+        sequence_length=config["sequence_length"],
+        transform=transform,
+        downsample_factor=config["downsample_factor"],
     )
 
-    train_dataset = USDataset(
-        h5_file=config["train_h5_file"],
-        image_root_dir=config["image_root_dir"],
-        num_frames=config["num_input_frames"],
-        transform=transform,
-    )
-    val_dataset = USDataset(
-        h5_file=config["val_h5_file"],
-        image_root_dir=config["image_root_dir"],
-        num_frames=config["num_input_frames"],
-        transform=transform,
+    # Split dataset
+    train_indices, val_indices = train_test_split(
+        range(len(dataset)), test_size=config["val_split"], random_state=42
     )
 
+    # Create data loaders
     train_loader = DataLoader(
-        train_dataset,
+        dataset,
         batch_size=config["batch_size"],
-        shuffle=True,
-        num_workers=config["num_workers"],
+        sampler=torch.utils.data.SubsetRandomSampler(train_indices),
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=config["batch_size"], num_workers=config["num_workers"]
+        dataset,
+        batch_size=config["batch_size"],
+        sampler=torch.utils.data.SubsetRandomSampler(val_indices),
     )
 
-    # Model
-    model = DCLNet(num_input_frames=config["num_input_frames"], num_classes=7).to(
-        device
-    )
+    # Initialize model
+    model = GruNet(
+        input_channels=1,
+        input_height=1000 // config["downsample_factor"],
+        input_width=657 // config["downsample_factor"],
+    ).to(device)
 
     # Loss and optimizer
     criterion = MSECorrelationLoss(lambda_corr=config["lambda_corr"])
     optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
-    scheduler = optim.lr_scheduler.StepLR(
-        optimizer, step_size=config["lr_step_size"], gamma=config["lr_gamma"]
+    scheduler = ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.1, patience=5, verbose=True
     )
 
     # Training loop
     for epoch in range(config["num_epochs"]):
         model.train()
-        for batch_idx, (inputs, targets) in enumerate(train_loader):
-            inputs, targets = inputs.to(device), targets.to(device)
+        train_loss = 0.0
+        for frames, imu_data, targets in tqdm(
+            train_loader, desc=f"Epoch {epoch+1}/{config['num_epochs']}"
+        ):
+            frames, imu_data, targets = (
+                frames.to(device),
+                imu_data.to(device),
+                targets.to(device),
+            )
 
             optimizer.zero_grad()
-            outputs = model(inputs)
+            outputs = model(frames, imu_data)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
 
-            if batch_idx % config["log_interval"] == 0:
-                print(
-                    f"Train Epoch: {epoch} [{batch_idx * len(inputs)}/{len(train_loader.dataset)} "
-                    f"({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}"
-                )
+            train_loss += loss.item()
 
         # Validation
         model.eval()
-        val_loss = 0
+        val_loss = 0.0
         with torch.no_grad():
-            for inputs, targets in val_loader:
-                inputs, targets = inputs.to(device), targets.to(device)
-                outputs = model(inputs)
-                val_loss += criterion(outputs, targets).item()
+            for frames, imu_data, targets in val_loader:
+                frames, imu_data, targets = (
+                    frames.to(device),
+                    imu_data.to(device),
+                    targets.to(device),
+                )
+                outputs = model(frames, imu_data)
+                loss = criterion(outputs, targets)
+                val_loss += loss.item()
 
+        train_loss /= len(train_loader)
         val_loss /= len(val_loader)
-        print(f"Validation loss: {val_loss:.6f}")
+        print(
+            f"Epoch {epoch+1}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
+        )
 
-        scheduler.step()
+        scheduler.step(val_loss)
 
     # Save the model
     torch.save(model.state_dict(), config["model_save_path"])
 
 
 if __name__ == "__main__":
-    with open("configs/default_config.yaml", "r") as f:
-        config = yaml.safe_load(f)
+    parser = argparse.ArgumentParser(description="Train the Ultrasound GRU Model")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="configs/default_config.yaml",
+        help="Path to config file",
+    )
+    args = parser.parse_args()
+
+    config = load_config(args.config)
     train(config)

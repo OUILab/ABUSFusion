@@ -9,6 +9,9 @@ class MSECorrelationLoss(nn.Module):
         self.lambda_corr = lambda_corr
 
     def forward(self, predictions, targets):
+        assert (
+            predictions.shape == targets.shape
+        ), f"Shape mismatch: predictions {predictions.shape}, targets {targets.shape}"
         mse_loss = self.mse(predictions, targets)
 
         # Compute correlation loss

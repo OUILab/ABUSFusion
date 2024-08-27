@@ -1,23 +1,31 @@
 # Data
-train_h5_file: 'path/to/your/train.h5'
-val_h5_file: 'path/to/your/val.h5'
-inference_h5_file: 'path/to/your/inference.h5'
-image_root_dir: 'C:\Users\Robert Bing\Desktop\Matched_IMU_OT_frames'
-num_input_frames: 5
-image_size: 224
+data_file: '/home/varun/xia_lab/repos/ABUSFusion/scans/20240826/wrist_data.h5'
+sequence_length: 2
+downsample_factor: 3
+val_split: 0.2
 
 # Model
-model_save_path: 'experiments/checkpoints/dclnet_model.pth'
+model_save_path: 'experiments/checkpoints/ultrasound_gru_model.pth'
 
 # Training
-batch_size: 32
-num_epochs: 300
-learning_rate: 5e-5
-lr_step_size: 5
-lr_gamma: 0.9
+batch_size: 1
+num_epochs: 3
+learning_rate: 0.0001
 lambda_corr: 0.5
-num_workers: 4
+num_workers: 8
 log_interval: 10
 
 # Hardware
 device: 'cuda'
+
+# Reconstruction
+reconstruction_voxel_size: 0.1
+
+# Probe specifications
+probe_specs:
+  depth: 50  # mm (axial direction)
+  width: 38  # mm (lateral direction)
+  axial_res: 0.5  # mm
+  lateral_res: 2  # mm
+  slice_thickness: 5  # mm (elevational direction)
+  marker_to_probe_bottom: 54  # mm 

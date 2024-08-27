@@ -1,67 +1,92 @@
-# data/us_dataset.py
-
 import torch
 from torch.utils.data import Dataset
-import pandas as pd
 import numpy as np
-from PIL import Image
-import os
+import pandas as pd
+from torchvision import transforms
+from scipy.spatial.transform import Rotation
 
 
-class USDataset(Dataset):
-    def __init__(
-        self,
-        h5_file,
-        image_root_dir,
-        num_frames=5,
-        transform=None,
-        inference_mode=False,
-    ):
-        self.data = pd.read_hdf(h5_file)
-        self.image_root_dir = image_root_dir
-        self.num_frames = num_frames
-        self.transform = transform
-        self.inference_mode = inference_mode
-        self.samples = self._prepare_samples()
+class UnifiedUltrasoundDataset(Dataset):
+    def __init__(self, file_paths, sequence_length=10, downsample_factor=3):
+        self.file_paths = [file_paths] if isinstance(file_paths, str) else file_paths
+        self.sequence_length = sequence_length
+        self.downsample_factor = downsample_factor
 
-    def _prepare_samples(self):
-        samples = []
-        for i in range(len(self.data) - self.num_frames + 1):
-            samples.append(i)
-        return samples
+        self.dfs = [pd.read_hdf(file_path) for file_path in self.file_paths]
+        self.frame_shape = self.dfs[0]["frame"].iloc[0].shape
+
+        self.indices = self._create_indices()
+
+        self.resize = transforms.Resize(
+            (
+                self.frame_shape[0] // self.downsample_factor,
+                self.frame_shape[1] // self.downsample_factor,
+            )
+        )
+
+    def _create_indices(self):
+        indices = []
+        for session, df in enumerate(self.dfs):
+            session_length = len(df)
+            indices.extend(
+                [(session, i) for i in range(session_length - self.sequence_length)]
+            )
+        return indices
 
     def __len__(self):
-        return len(self.samples)
+        return len(self.indices)
 
     def __getitem__(self, idx):
-        start_idx = self.samples[idx]
+        session, start_idx = self.indices[idx]
+        df = self.dfs[session]
+        sequence = df.iloc[start_idx : start_idx + self.sequence_length]
 
-        frames = []
-        for i in range(self.num_frames):
-            row = self.data.iloc[start_idx + i]
+        frames = torch.tensor(np.stack(sequence["frame"].values)).float()
+        frames = frames.mean(dim=-1, keepdim=True)  # Convert to grayscale
+        frames = frames.permute(
+            0, 3, 1, 2
+        )  # (sequence_length, channels, height, width)
+        frames = torch.stack([self.resize(frame) for frame in frames])
 
-            # Load image
-            img_path = os.path.join(self.image_root_dir, row["image_path"])
-            frame = Image.open(img_path).convert("L")  # Convert to grayscale
-            if self.transform:
-                frame = self.transform(frame)
-            frames.append(frame)
+        imu_columns = [
+            "imu_acc_x",
+            "imu_acc_y",
+            "imu_acc_z",
+            "imu_orientation_x",
+            "imu_orientation_y",
+            "imu_orientation_z",
+        ]
+        imu_data = torch.tensor(sequence[imu_columns].values).float()
 
-        frames_tensor = torch.stack(frames)
+        # Get the transformation for the last frame relative to the first frame
+        first_frame = sequence.iloc[0]
+        last_frame = sequence.iloc[-1]
+        target = self._get_relative_transform(first_frame, last_frame)
 
-        if self.inference_mode:
-            return frames_tensor, start_idx
+        return frames, imu_data, target
 
-        # Extract OT data
-        ot_data = []
-        for i in range(self.num_frames):
-            row = self.data.iloc[start_idx + i]
-            ot = row["OT_columns"]
-            ot_data.append(
-                [ot["qw"], ot["qx"], ot["qy"], ot["qz"], ot["x"], ot["y"], ot["z"]]
-            )
+    def _get_relative_transform(self, first_frame, last_frame):
+        def get_transform_matrix(frame):
+            pos = [frame["ot_pos_x"], frame["ot_pos_y"], frame["ot_pos_z"]]
+            quat = [frame["ot_qw"], frame["ot_qx"], frame["ot_qy"], frame["ot_qz"]]
+            rot = Rotation.from_quat(quat).as_matrix()
+            transform = np.eye(4)
+            transform[:3, :3] = rot
+            transform[:3, 3] = pos
+            return transform
 
-        ot_tensor = torch.tensor(ot_data, dtype=torch.float32)
-        ot_mean = torch.mean(ot_tensor[:-1], dim=0)
+        T_first = get_transform_matrix(first_frame)
+        T_last = get_transform_matrix(last_frame)
 
-        return frames_tensor, ot_mean
+        T_relative = np.linalg.inv(T_first) @ T_last
+
+        # Extract translation
+        translation = T_relative[:3, 3]
+
+        # Extract rotation and convert to Euler angles
+        rotation = Rotation.from_matrix(T_relative[:3, :3]).as_euler("xyz")
+
+        # Combine translation and rotation into a 6-DoF vector
+        transform = np.concatenate([translation, rotation])
+
+        return torch.tensor(transform).float()

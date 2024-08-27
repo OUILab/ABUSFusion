@@ -1,17 +1,19 @@
 # main.py
 
+import argparse
+import os
+
+import numpy as np
 import torch
 import torch.optim as optim
+import yaml
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from models.dclnet.dclnet import DCLNet
+
 from data.us_dataset import USDataset
+from models.dclnet.dclnet import DCLNet
 from utils.losses.mse_correlation_loss import MSECorrelationLoss
 from utils.visualization.plot_results import visualize_3d_volume
-import yaml
-import os
-import argparse
-import numpy as np
 
 
 def load_config(config_path):

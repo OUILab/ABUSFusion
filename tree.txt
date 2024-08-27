@@ -1,8 +1,10 @@
 .
-
+├── calib.ipynb
 ├── configs
 │   └── default_config.yaml
 ├── data
+│   ├── __pycache__
+│   │   └── us_dataset.cpython-312.pyc
 │   └── us_dataset.py
 ├── docs
 ├── environment.yml
@@ -12,30 +14,107 @@
 │   ├── logs
 │   └── results
 ├── inference.ipynb
+├── inference.py
 ├── LICENSE
 ├── main.py
+├── mil.ipynb
+├── mil.py
 ├── models
-│   ├── dclnet
-│   │   ├── dclnet.py
-│   │   └── __init__.py
-│   └── future_models
+│   ├── dclnet.py
+│   ├── grunet.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── dclnet.cpython-312.pyc
+│   │   ├── grunet.cpython-312.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   └── raftmamba.cpython-312.pyc
+│   └── raftmamba.py
+├── neuralop0.md
+├── neuralop10.md
+├── neuralop10.pdf
+├── neuralop11.md
+├── neuralop1.md
+├── neuralop2.md
+├── neuralop4.mmd
+├── neuralop5.md
+├── neuralop6.md
+├── neuralop7.md
+├── neuralop8.md
+├── neuralop9.md
 ├── notebooks
+│   ├── best_model.pth
+│   ├── data_format.ipynb
+│   ├── dclnet.ipynb
+│   ├── GOATED1_DO_NO_TOUCH.ipynb
+│   ├── ground_truth_volume2.npy
+│   ├── ground_truth_volume3.npy
+│   ├── ground_truth_volume4.npy
+│   ├── ground_truth_volume_metadata2.npy
+│   ├── ground_truth_volume_metadata4.npy
+│   ├── ground_truth_volume_metadata.npy
+│   ├── ground_truth_volume.npy
+│   ├── grumodel.py
+│   ├── interpolated_volume.npy
+│   ├── new2.ipynb
+│   ├── new.ipynb
+│   ├── new.py
+│   ├── notebook2.py
+│   ├── notebook3.ipynb
+│   ├── notebook.py
+│   ├── predicted_volume_metadata.npy
+│   ├── predicted_volume.npy
+│   └── raftmamba.py
+├── pretrained_networks
+│   ├── 3d_best_Generator_0312-185335.pth
+│   ├── 3d_best_Generator_c95.pth
+│   ├── 3d_best_Generator_dcl2_big_m25_ns2_bi.pth
+│   ├── 3d_best_Generator_dcl2_big_m25_ns2_bi_slice2.pth
+│   ├── 3d_best_Generator_mc72.pth
+│   └── readme
 ├── README.md
+├── scans
+│   └── 20240826
+│       └── wrist_data.h5
 ├── scripts
+│   ├── __pycache__
+│   │   └── vispy_3d_viz.cpython-312.pyc
+│   └── vispy_3d_viz.py
 ├── tests
 │   ├── __init__.py
 │   ├── test_dclnet.py
 │   ├── test_losses.py
 │   └── test_metrics.py
 ├── train.py
-└── utils
-    ├── __init__.py
-    ├── losses
-    │   ├── __init__.py
-    │   └── mse_correlation_loss.py
-    ├── metrics
-    │   ├── __init__.py
-    │   └── reconstruction_metrics.py
-    └── visualization
-        ├── __init__.py
-        └── plot_results.py
+├── tree.txt
+├── utils
+│   ├── __init__.py
+│   ├── losses
+│   │   ├── __init__.py
+│   │   ├── mse_correlation_loss.py
+│   │   └── __pycache__
+│   │       ├── __init__.cpython-312.pyc
+│   │       └── mse_correlation_loss.cpython-312.pyc
+│   ├── metrics
+│   │   ├── __init__.py
+│   │   └── reconstruction_metrics.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   └── reconstruction.cpython-312.pyc
+│   ├── reconstruction.py
+│   └── visualization
+│       ├── __init__.py
+│       ├── plot_results.py
+│       └── __pycache__
+│           ├── __init__.cpython-312.pyc
+│           └── plot_results.cpython-312.pyc
+└── weights
+    ├── 20240821T142921
+    │   └── max_val_AUC.weights.h5
+    ├── 20240821T143130
+    │   └── min_val_loss.weights.h5
+    ├── 20240821T143814
+    ├── 20240821T144318
+    └── 20240821T144453
+        └── min_val_loss.weights.h5
+
+30 directories, 87 files
